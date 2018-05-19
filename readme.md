@@ -1,5 +1,5 @@
 # Secure Offline Wallet for Ethereum
-Command line tool to create Secure (offline) Ethereum paper wallets.
+Command line tool to create Secure (offline) Ethereum Wallets.
 
 ## Dependencies
 
