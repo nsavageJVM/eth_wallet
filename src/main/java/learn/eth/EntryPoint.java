@@ -22,9 +22,6 @@ public class EntryPoint  {
 		walletService = appContext.getBean( WalletService.class);
 		// walletService.createWallet(args[0]);
 		walletService.loadCredentialsCheckAndStop(args[0]) ;
-
-
-
 		}
 
 	}

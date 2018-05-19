@@ -7,14 +7,15 @@ import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
 
 import javax.annotation.PostConstruct;
-
 import java.io.IOException;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collection;
 
 import static java.lang.Class.forName;
 
+
+/**
+ * Persist etherium wallet artifacts with sql lite
+ */
 @Component
 public class DbManager {
 

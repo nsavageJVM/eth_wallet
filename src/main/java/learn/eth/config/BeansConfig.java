@@ -16,7 +16,10 @@ public class BeansConfig {
     private final Logger logger = LoggerFactory.getLogger("home grown beans");
 
 
-
+    /**
+     * A shutdown hook from a callback
+     * @return
+     */
     @Bean(name="shutDownHook")
     public Subscriber<String> getShutDownHook()  {
         return  new Subscriber<String>() {

@@ -105,8 +105,6 @@ public class WalletService {
     }
 
 
-
-
     public String getRinkbySrcAccount() {
 
      return   env.getProperty("rinkby.source.address");
