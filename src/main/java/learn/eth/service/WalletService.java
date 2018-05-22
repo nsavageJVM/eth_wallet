@@ -71,26 +71,6 @@ public class WalletService {
 
 
 
-    public void loadCredentialsCheckAndStop(String menomic ) {
-
-        /**
-         * Do this as we are accessing a system resource "database"
-         *
-         * and we dont want to block the application
-         *
-         */
-        Observable callBack = Observable.unsafeCreate(subscriber -> {
-
-            Credentials credentials  = dbManager.getUserCredentials(menomic);
-            subscriber.onNext(credentials);
-            subscriber.onCompleted();
-        });
-
-        callBack.subscribe(credentialsHook);
-
-    }
-
-
     public Observable<Credentials> loadCredentials(String menomic ) {
 
         /**
@@ -113,4 +93,24 @@ public class WalletService {
     }
 
 
+
+
+    public void loadCredentialsCheckAndStop(String menomic ) {
+
+        /**
+         * Do this as we are accessing a system resource "database"
+         *
+         * and we dont want to block the application
+         *
+         */
+        Observable callBack = Observable.unsafeCreate(subscriber -> {
+
+            Credentials credentials  = dbManager.getUserCredentials(menomic);
+            subscriber.onNext(credentials);
+            subscriber.onCompleted();
+        });
+
+        callBack.subscribe(credentialsHook);
+
+    }
 }
