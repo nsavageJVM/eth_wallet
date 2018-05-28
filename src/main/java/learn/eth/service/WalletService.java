@@ -1,5 +1,6 @@
 package learn.eth.service;
 
+import learn.eth.config.PropertiesConfig;
 import learn.eth.db.DbManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.List;
 
 @Service(value="walletService")
 public class WalletService {
@@ -35,11 +37,16 @@ public class WalletService {
     private DbManager dbManager;
 
 
+    @Autowired
+    private PropertiesConfig propertiesConfig;
 
-    public void createWallet(String menomic) {
 
 
-            try {
+
+    public Observable<String> createWallet(String menomic) {
+        Observable<String>  callBack = null;
+
+        try {
                 ECKeyPair ecKeyPair = Keys.createEcKeyPair();
 
                 /**
@@ -48,25 +55,25 @@ public class WalletService {
                  * and we dont want to block the application
                  *
                  */
-                Observable callBack = Observable.unsafeCreate(subscriber -> {
+                 callBack = Observable.unsafeCreate(subscriber -> {
 
                     String fileAsJson= null;
                     try {
-                        fileAsJson = WalletUtils.generateWalletFile(menomic, ecKeyPair,  new File("/home/ubu/wally"), true);
+                        fileAsJson = WalletUtils.generateWalletFile(menomic, ecKeyPair,  new File(propertiesConfig.getBase()), true);
                          dbManager.saveWalletLocation(menomic, fileAsJson );
                     } catch (CipherException | IOException e) {
 
                     }
                     subscriber.onNext(fileAsJson);
-                    subscriber.onCompleted();
+                  //  subscriber.onCompleted();
 
                 });
 
-                callBack.subscribe(shutDownHook);
 
             } catch (  InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException e) {
                 //
             }
+        return callBack;
     }
 
 
@@ -85,14 +92,31 @@ public class WalletService {
     }
 
 
+
+
+    public Observable<List<String>> loadMenomics( ) {
+
+        /**
+         * Do this as we are accessing a system resource "database"
+         *
+         * and we dont want to block the application
+         *
+         */
+        Observable<List<String>> callBack = Observable.just( dbManager.findAllMenomics( ));
+
+        return callBack;
+    }
+
+
+
+
+
     public String getRinkbySrcAccount() {
 
      return   env.getProperty("rinkby.source.address");
 
 
     }
-
-
 
 
     public void loadCredentialsCheckAndStop(String menomic ) {

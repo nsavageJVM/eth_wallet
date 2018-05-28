@@ -1,20 +1,28 @@
 package learn.eth.config;
 
-
+import org.jline.utils.AttributedString;
+import org.jline.utils.AttributedStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
+
+import org.springframework.shell.jline.PromptProvider;
 import org.web3j.crypto.Credentials;
+
 import rx.Subscriber;
+
 
 @Configuration
 public class BeansConfig {
 
     private final Logger logger = LoggerFactory.getLogger("home grown beans");
 
+    @Bean
+    public PromptProvider myPromptProvider() {
+        return () -> new AttributedString("wally's wallets:>",
+                AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
+    }
 
     /**
      * A shutdown hook from a callback

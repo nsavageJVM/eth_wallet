@@ -27,7 +27,28 @@ repositories {
 dependencies {
 	implementation('org.springframework.boot:spring-boot-starter-web')
 	implementation ('org.web3j:core:3.4.0')
+	implementation ('io.projectreactor:reactor-core:3.1.7.RELEASE')
+	implementation ( 'org.springframework.shell:spring-shell-starter:2.0.0.RELEASE')
 	implementation 'org.xerial:sqlite-jdbc:3.21.0.1'
 	implementation'commons-dbutils:commons-dbutils:1.7'
 	testImplementation('org.springframework.boot:spring-boot-starter-test')
+}
+
+
+
+task  deployArtifact (type: Copy, dependsOn: bootJar) {
+
+	File deployFolder = new File(project.projectDir, "artifacts")
+	File targetFolder = new File(project.projectDir, "build/libs/learn.eth-0.0.1-SNAPSHOT.jar")
+
+	println("deployFolder = ${deployFolder.absolutePath}")
+	println("targetFolder = ${targetFolder.absolutePath}")
+
+	from targetFolder
+	into deployFolder
+	rename { filename ->
+		filename.replace 'learn.eth-0.0.1-SNAPSHOT', 'wallys'
+	}
+
+
 }

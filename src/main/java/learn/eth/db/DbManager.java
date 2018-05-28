@@ -1,6 +1,8 @@
 package learn.eth.db;
 
+import learn.eth.config.PropertiesConfig;
 import org.apache.commons.dbutils.QueryRunner;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
@@ -9,6 +11,8 @@ import org.web3j.crypto.WalletUtils;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.lang.Class.forName;
 
@@ -19,10 +23,15 @@ import static java.lang.Class.forName;
 @Component
 public class DbManager {
 
+
+    @Autowired
+    private PropertiesConfig propertiesConfig;
+
     private Connection connection = null;
     private static Boolean isInitial = false;
 
-    private static final String FILE_PATH_TEMPLATE = "/home/ubu/wally/%s";
+     private static String user_home = System.getProperty("user.home");
+
 
     static {
         try {
@@ -37,7 +46,7 @@ public class DbManager {
     void init() {
 
         try {
-            connection = DriverManager.getConnection("jdbc:sqlite:/home/ubu/wally.db");
+            connection = DriverManager.getConnection(String.format("jdbc:sqlite:%s/wally.db", user_home));
             Statement statement = connection.createStatement();
             statement.setQueryTimeout(3);  // set timeout to 3 sec.
 
@@ -74,7 +83,7 @@ public class DbManager {
             while (rs.next()) {
                 String file_path = rs.getString("file_path");
 
-                    credentials = WalletUtils.loadCredentials(menomic, String.format(FILE_PATH_TEMPLATE, file_path ) );
+                    credentials = WalletUtils.loadCredentials(menomic, String.format(propertiesConfig.getBase_template(), file_path ) );
 
             }
 
@@ -84,6 +93,25 @@ public class DbManager {
         return credentials;
     }
 
+
+    public  List<String>  findAllMenomics() {
+
+        List<String> results = new ArrayList<String>();
+        try {
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT menomic FROM wally;");
+
+            while (rs.next()) {
+                String menomic = rs.getString("menomic");
+                results.add(menomic);
+            }
+
+        } catch ( SQLException  e) {
+            e.printStackTrace();
+        }
+
+        return results;
+    }
 
 
 
