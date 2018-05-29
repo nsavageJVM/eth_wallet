@@ -8,15 +8,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.web3j.crypto.*;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.DefaultBlockParameterName;
+import org.web3j.protocol.core.methods.response.EthGetBalance;
+import org.web3j.protocol.http.HttpService;
 import rx.Observable;
 import rx.Subscriber;
 
+import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service(value="walletService")
 public class WalletService {
@@ -25,9 +34,6 @@ public class WalletService {
 
     @Autowired
     private Environment env;
-
-    @Autowired
-    private Subscriber<String> shutDownHook;
 
     @Autowired
     private Subscriber<Credentials> credentialsHook;
@@ -40,6 +46,45 @@ public class WalletService {
     @Autowired
     private PropertiesConfig propertiesConfig;
 
+    private Web3j web3j;
+
+    private BigInteger acountBalance;
+
+
+    @PostConstruct
+    void init() {
+        web3j = Web3j.build(new HttpService("http://127.0.0.1:8545"));
+    }
+
+
+    public Observable<BigInteger> getBalance(String menomic) {
+
+
+        return Observable.fromCallable(() -> loadBalance(menomic));
+    }
+
+
+    private BigInteger loadBalance(String menomic) {
+
+        loadCredentials(menomic).subscribe(
+                c -> {
+                    String remoteAccount= c.getAddress();
+                    EthGetBalance remoteAccountBalance = null;
+                    try {
+                        remoteAccountBalance = web3j
+                                .ethGetBalance(remoteAccount, DefaultBlockParameterName.LATEST)
+                                .sendAsync()
+                                .get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        e.printStackTrace();
+                    }
+                    acountBalance =   remoteAccountBalance.getBalance();
+                });
+        return acountBalance;
+    }
+
+
+
 
 
 
@@ -49,12 +94,6 @@ public class WalletService {
         try {
                 ECKeyPair ecKeyPair = Keys.createEcKeyPair();
 
-                /**
-                 * Do this as we are accessing a system resource "file system"
-                 *
-                 * and we dont want to block the application
-                 *
-                 */
                  callBack = Observable.unsafeCreate(subscriber -> {
 
                     String fileAsJson= null;
@@ -80,12 +119,6 @@ public class WalletService {
 
     public Observable<Credentials> loadCredentials(String menomic ) {
 
-        /**
-         * Do this as we are accessing a system resource "database"
-         *
-         * and we dont want to block the application
-         *
-         */
         Observable<Credentials> callBack = Observable.just( dbManager.getUserCredentials(menomic));
 
         return callBack;
@@ -96,12 +129,6 @@ public class WalletService {
 
     public Observable<List<String>> loadMenomics( ) {
 
-        /**
-         * Do this as we are accessing a system resource "database"
-         *
-         * and we dont want to block the application
-         *
-         */
         Observable<List<String>> callBack = Observable.just( dbManager.findAllMenomics( ));
 
         return callBack;
@@ -119,14 +146,11 @@ public class WalletService {
     }
 
 
+    /**
+     * test method only
+     */
     public void loadCredentialsCheckAndStop(String menomic ) {
 
-        /**
-         * Do this as we are accessing a system resource "database"
-         *
-         * and we dont want to block the application
-         *
-         */
         Observable callBack = Observable.unsafeCreate(subscriber -> {
 
             Credentials credentials  = dbManager.getUserCredentials(menomic);
@@ -137,4 +161,6 @@ public class WalletService {
         callBack.subscribe(credentialsHook);
 
     }
+
+
 }

@@ -10,7 +10,7 @@ public class PropertiesConfig {
 
     private String base;
 
-    private String base_template;
+    private String template;
 
     public String getBase() {
         return base;
@@ -20,11 +20,13 @@ public class PropertiesConfig {
         this.base = base;
     }
 
-    public String getBase_template() { return base_template; }
-
-    public void setBase_template(String base_template) {
-        this.base_template = base_template;
+    public String getTemplate() { return template;
     }
+
+    public void setTemplate(String template) { this.template = template;
+    }
+
+
 
 
 

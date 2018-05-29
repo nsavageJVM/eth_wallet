@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ansi.AnsiOutput;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
+import org.web3j.utils.Convert;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -41,14 +42,33 @@ public class Cli {
     }
 
 
-    @ShellMethod("Shows users Wallets")
-    public String showWallets( String menomic) {
+    @ShellMethod("Show Wallet Balance")
+    public String getWalletBalance( String menomic) {
+        AtomicReference<String> result = new AtomicReference<>("");
+
+         walletService.getBalance(menomic).subscribe(balance -> {
+             result.set(AnsiOutput.toString(RED, balance.toString(), DEFAULT));
+         },
+         e -> {
+             System.out.println(e.getLocalizedMessage());
+         });
 
 
-        walletService.createWallet(menomic);
-
-        return  AnsiOutput.toString(GREEN, menomic, DEFAULT);
+        return  result.get();
     }
+
+
+    @ShellMethod("Shows avaiable Menomics")
+    public String showMenomics( ) {
+        AtomicReference<String> result = new AtomicReference<>("");
+        walletService.loadMenomics().subscribe(
+                s -> {
+                    result.set(AnsiOutput.toString(RED, String.join(",",  s), DEFAULT)); }
+        );
+
+        return  result.get();
+    }
+
 
 
     @ShellMethod("Show deBug")

@@ -83,7 +83,7 @@ public class DbManager {
             while (rs.next()) {
                 String file_path = rs.getString("file_path");
 
-                    credentials = WalletUtils.loadCredentials(menomic, String.format(propertiesConfig.getBase_template(), file_path ) );
+                    credentials = WalletUtils.loadCredentials(menomic, String.format(propertiesConfig.getTemplate(), file_path ) );
 
             }
 
