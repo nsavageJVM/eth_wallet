@@ -26,6 +26,10 @@ public class TransactionCli {
     @Autowired
     private Security auth;
 
+    private static final String remoteCheckUrl = "check transaction status at "+System.lineSeparator()+"https://rinkeby.etherscan.io/txsPending";
+
+    private static final String TRANSACTION_RESULT_TEMPLATE = "Transaction hash: %s"+System.lineSeparator()+"%s";
+
 
     @ShellMethod("run a transaction from remote account")
     public String runTransaction( String menomic, String transactionAmountInEther) {
@@ -41,10 +45,16 @@ public class TransactionCli {
             // send the transaction with the local rinkby client
             walletService.sendTransaction(transaction, dto).subscribe(
 
-                    s->  { result.set(AnsiOutput.toString(GREEN, s, DEFAULT));} );
+                    s->  {
+                        result
+                            .set(
+                             String.format(
+                             TRANSACTION_RESULT_TEMPLATE, AnsiOutput.toString(GREEN, s, DEFAULT),
+                              AnsiOutput.toString(YELLOW, remoteCheckUrl, DEFAULT )));
+                        } );
             });
 
-        return  AnsiOutput.toString(GREEN, result.get(), DEFAULT);
+        return  result.get();
     }
 
 }
