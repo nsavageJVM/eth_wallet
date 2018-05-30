@@ -4,17 +4,16 @@ package learn.eth.service;
 import learn.eth.config.PropertiesConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ansi.AnsiOutput;
+import org.springframework.shell.Availability;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.table.*;
-import org.web3j.utils.Convert;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.springframework.boot.ansi.AnsiColor.*;
-import static org.springframework.shell.table.CellMatchers.at;
 
 
 // https://docs.spring.io/spring-shell/docs/2.0.0.RELEASE/reference/htmlsingle/#_writing_your_own_commands
@@ -33,6 +32,11 @@ public class Cli {
     private Security auth;
 
 
+    Availability logInAvailability() {
+
+        return !auth.isLoggedIn() ? Availability.available() :Availability.unavailable("already logged in");
+    }
+
     @ShellMethod("Log in with password")
     public String logIn( String password) {
 
@@ -49,8 +53,8 @@ public class Cli {
     @ShellMethod("Create a Wallet requires a suitable menomic")
     public String createWallet( String menomic) {
 
-        if(!authCheck()) {
-            return  AnsiOutput.toString(BRIGHT_RED, Security.NOT_AUThORISED, DEFAULT);
+        if(!auth.isLoggedIn()) {
+            return  AnsiOutput.toString(BRIGHT_RED, Security.NOT_AUTHORISED, DEFAULT);
         }
 
         if(menomic.length() <  40) {
@@ -67,8 +71,8 @@ public class Cli {
     public String getLocalWalletBalance( String menomic) {
 
 
-        if(!authCheck()) {
-            return  AnsiOutput.toString(BRIGHT_RED, Security.NOT_AUThORISED, DEFAULT);
+        if(!auth.isLoggedIn()) {
+            return  AnsiOutput.toString(BRIGHT_RED, Security.NOT_AUTHORISED, DEFAULT);
         }
         AtomicReference<String> result = new AtomicReference<>("");
 
@@ -88,8 +92,8 @@ public class Cli {
     @ShellMethod("Show Remote Wallet Balance")
     public String getRemoteWalletBalance( )  {
 
-        if(!authCheck()) {
-            return  AnsiOutput.toString(BRIGHT_RED, Security.NOT_AUThORISED, DEFAULT);
+        if(!auth.isLoggedIn()) {
+            return  AnsiOutput.toString(BRIGHT_RED, Security.NOT_AUTHORISED, DEFAULT);
         }
         AtomicReference<String> result = new AtomicReference<>("");
 
@@ -109,11 +113,11 @@ public class Cli {
     @ShellMethod("Shows avaiable Menomics")
     public Table showMenomics( ) {
 
-        if(!authCheck()) {
+        if(!auth.isLoggedIn()) {
             String[][] data = new String[1][1];
             TableModel model = new ArrayTableModel(data);
             TableBuilder tableBuilder = new TableBuilder(model) ;
-            data[0][0] = Security.NOT_AUThORISED;
+            data[0][0] = Security.NOT_AUTHORISED;
             return tableBuilder.addFullBorder(BorderStyle.fancy_light_double_dash).build();
         }
         List<String> menomics = new LinkedList<>();
@@ -145,13 +149,5 @@ public class Cli {
         return  result.get();
     }
 
-
-
-    private boolean authCheck() {
-
-        if(auth.isLoggedIn()) {
-            return true;
-        } else  return false;
-    }
 
 }

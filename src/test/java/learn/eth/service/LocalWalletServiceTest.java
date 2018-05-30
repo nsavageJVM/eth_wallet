@@ -141,7 +141,6 @@ public class LocalWalletServiceTest {
         // send the transaction with the local rinkby client
         EthSendTransaction  ethSendTransaction = web3j.ethSendRawTransaction(hexValue).sendAsync().get();
 
-
         if (ethSendTransaction.hasError()) {
             logger.info("oops: {}", ethSendTransaction.getError().getMessage());
         } else if (ethSendTransaction.getResult() != null || ethSendTransaction.getTransactionHash() != null) {

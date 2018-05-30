@@ -12,7 +12,7 @@ public class Security {
 
     public static final String  LOG_IN_SUCCESS= "Log In Ok";
     public static final String  LOG_IN_FAIL= "Log In Fail try again";
-    public static final String  NOT_AUThORISED= "Please log in to use this sevice";
+    public static final String NOT_AUTHORISED = "Please log in to use this sevice";
 
     private enum States {
         LOGGED_IN, LOGGED_OUT

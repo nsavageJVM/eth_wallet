@@ -2,6 +2,9 @@ package learn.eth.db;
 
 import learn.eth.config.PropertiesConfig;
 import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.handlers.ArrayListHandler;
+import org.apache.commons.dbutils.handlers.ColumnListHandler;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.web3j.crypto.CipherException;
@@ -48,13 +51,12 @@ public class DbManager {
         try {
             connection = DriverManager.getConnection(String.format("jdbc:sqlite:%s/wally.db", user_home));
             Statement statement = connection.createStatement();
-            statement.setQueryTimeout(3);  // set timeout to 3 sec.
+            statement.setQueryTimeout(3);
 
             if (isInitial) {
                 statement.executeUpdate("drop table if exists wally");
                 statement.executeUpdate("create table wally (menomic string,  file_path string)");
             }
-
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -63,11 +65,9 @@ public class DbManager {
 
     public void saveWalletLocation(String menomic, String file_path) {
 
-
         QueryRunner run = new QueryRunner();
         try {
-            run.update(connection, "insert into wally values (?,?)",
-                    new Object[]{menomic, file_path});
+            run.update(connection, "insert into wally values (?,?)",  new Object[]{menomic, file_path});
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -76,16 +76,12 @@ public class DbManager {
 
     public Credentials getUserCredentials(String menomic) {
         Credentials  credentials = null;
+        QueryRunner runner = new QueryRunner();
+        ScalarHandler<String> scalarHandler = new ScalarHandler<>();
+        String query ="SELECT file_path FROM wally where menomic = '" + menomic + "';";
         try {
-            Statement stmt = connection.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT * FROM wally where menomic = '" + menomic + "';");
-
-            while (rs.next()) {
-                String file_path = rs.getString("file_path");
-
-                    credentials = WalletUtils.loadCredentials(menomic, String.format(propertiesConfig.getTemplate(), file_path ) );
-
-            }
+        String file_path = runner.query(connection, query, scalarHandler);
+        credentials = WalletUtils.loadCredentials(menomic, String.format(propertiesConfig.getTemplate(), file_path ) );
 
         } catch (IOException | SQLException | CipherException e) {
             e.printStackTrace();
@@ -97,14 +93,10 @@ public class DbManager {
     public  List<String>  findAllMenomics() {
 
         List<String> results = new ArrayList<String>();
-        try {
-            Statement stmt = connection.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT menomic FROM wally;");
+        QueryRunner runner = new QueryRunner();
 
-            while (rs.next()) {
-                String menomic = rs.getString("menomic");
-                results.add(menomic);
-            }
+        try {
+            results = runner.query(connection,"SELECT menomic FROM wally", new ColumnListHandler<String>(1));
 
         } catch ( SQLException  e) {
             e.printStackTrace();
@@ -112,8 +104,6 @@ public class DbManager {
 
         return results;
     }
-
-
 
 
 }

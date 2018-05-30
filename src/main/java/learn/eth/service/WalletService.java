@@ -2,6 +2,7 @@ package learn.eth.service;
 
 import learn.eth.config.PropertiesConfig;
 import learn.eth.db.DbManager;
+import learn.eth.service.transaction.TransactionDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,10 @@ import org.web3j.crypto.*;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthGetBalance;
+import org.web3j.protocol.core.methods.response.EthGetTransactionCount;
+import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.http.HttpService;
+import org.web3j.utils.Numeric;
 import rx.Observable;
 import rx.Subscriber;
 
@@ -58,17 +62,12 @@ public class WalletService {
 
 
     public Observable<BigInteger> getBalance(String menomic) {
-
-
         return Observable.fromCallable(() -> loadBalance(menomic));
     }
 
     public Observable<BigInteger> getRemoteBalance( ) {
-
-
         return Observable.fromCallable(() -> loadRemoteBalance());
     }
-
 
     private BigInteger loadBalance(String menomic) {
 
@@ -89,8 +88,6 @@ public class WalletService {
         return acountBalance;
     }
 
-
-
     private BigInteger loadRemoteBalance( ) {
 
         String remoteAccount =  getRinkbySrcAccount();
@@ -109,8 +106,6 @@ public class WalletService {
 
         return remoteAccountBalanceEther;
     }
-
-
 
     public Observable<String> createWallet(String menomic) {
         Observable<String>  callBack = null;
@@ -160,12 +155,63 @@ public class WalletService {
 
 
 
+    public Observable<String> sendTransaction(RawTransaction transaction, TransactionDto dto) {
+
+        Observable<String> callBack = null;
+
+        // sign the transaction with the local wallets credentials
+        byte[] signedMessage = TransactionEncoder.signMessage(transaction, dto.getLocalCredentials());
+        String hexValue = Numeric.toHexString(signedMessage);
+        try {
+            EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).sendAsync().get();
+            if (ethSendTransaction.hasError()) {
+                callBack = Observable.just( ethSendTransaction.getError().getMessage());
+                logger.info("oops: {}", ethSendTransaction.getError().getMessage());
+            } else if (ethSendTransaction.getResult() != null || ethSendTransaction.getTransactionHash() != null) {
+                String transactionhash =   ethSendTransaction.getTransactionHash();
+
+                callBack = Observable.just( transactionhash);
+
+                logger.info("TransactionHash: {}",  transactionhash);
+
+                // https://rinkeby.etherscan.io/txsPending
+
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+        return callBack;
+    }
+
+
+
+    public Observable<TransactionDto> loadTransactionBaseData(String menomic ) {
+         TransactionDto dto = new TransactionDto();
+         dto.setRemoteAccount(getRinkbySrcAccount());
+         loadCredentials(menomic).subscribe(c -> {
+         dto.setLocalCredentials(c);
+
+            try {
+
+                EthGetTransactionCount ethGetTransactionCount =
+                        web3j.ethGetTransactionCount(dto.getLocalAccount(), DefaultBlockParameterName.LATEST).sendAsync().get();
+                dto.setNonce(ethGetTransactionCount.getTransactionCount());
+                ;
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+
+        });
+
+        Observable<TransactionDto> callBack = Observable.just( dto);
+
+        return callBack;
+    }
 
 
     public String getRinkbySrcAccount() {
 
      return   env.getProperty("rinkby.source.address");
-
 
     }
 
@@ -185,6 +231,5 @@ public class WalletService {
         callBack.subscribe(credentialsHook);
 
     }
-
 
 }
