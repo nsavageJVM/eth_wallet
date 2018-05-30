@@ -63,6 +63,12 @@ public class WalletService {
         return Observable.fromCallable(() -> loadBalance(menomic));
     }
 
+    public Observable<BigInteger> getRemoteBalance( ) {
+
+
+        return Observable.fromCallable(() -> loadRemoteBalance());
+    }
+
 
     private BigInteger loadBalance(String menomic) {
 
@@ -85,6 +91,24 @@ public class WalletService {
 
 
 
+    private BigInteger loadRemoteBalance( ) {
+
+        String remoteAccount =  getRinkbySrcAccount();
+        BigInteger remoteAccountBalanceEther =  BigInteger.ZERO;
+
+        try {
+            EthGetBalance remoteAccountBalance = web3j
+                    .ethGetBalance(remoteAccount, DefaultBlockParameterName.LATEST)
+                    .sendAsync()
+                    .get();
+            remoteAccountBalanceEther = remoteAccountBalance.getBalance();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+
+
+        return remoteAccountBalanceEther;
+    }
 
 
 
