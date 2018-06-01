@@ -1,38 +1,31 @@
 package learn.eth;
 
 
-import learn.eth.service.WalletService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.util.StopWatch;
+import org.springframework.context.annotation.Bean;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static org.springframework.boot.SpringApplication.run;
 
 
 @SpringBootApplication
-
 public class EntryPoint  {
 
-	private final Logger logger = LoggerFactory.getLogger("Command Line: ");
+	public static void main(String[] args) {  run(EntryPoint.class, args); }
 
 
-	@Autowired
-	private static WalletService walletService;
+	@Bean
+	CommandLineRunner runner(){
+		return args -> {
 
-	public EntryPoint(){
+			boolean result = Files.deleteIfExists(Paths.get("./spring-shell.log"));
 
+			System.out.println("delete log file result "+result);
+		};
 	}
-
-
-	public static void main(String[] args) {
-
-		// https://devops.datenkollektiv.de/migrating-from-spring-shell-12-to-20.html
-
-		run(EntryPoint.class, args);
-
-
-		}
 
 }

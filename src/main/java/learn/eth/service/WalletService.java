@@ -31,17 +31,13 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
-@Service(value="walletService")
+@Service(value = "walletService")
 public class WalletService {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private Environment env;
-
-    @Autowired
-    private Subscriber<Credentials> credentialsHook;
-
 
     @Autowired
     private DbManager dbManager;
@@ -65,33 +61,32 @@ public class WalletService {
         return Observable.fromCallable(() -> loadBalance(menomic));
     }
 
-    public Observable<BigInteger> getRemoteBalance( ) {
+    public Observable<BigInteger> getRemoteBalance() {
         return Observable.fromCallable(() -> loadRemoteBalance());
     }
 
     private BigInteger loadBalance(String menomic) {
+        Credentials credentials = dbManager.getUserCredentials(menomic);
 
-        loadCredentials(menomic).subscribe(
-                c -> {
-                    String remoteAccount= c.getAddress();
-                    EthGetBalance remoteAccountBalance = null;
-                    try {
-                        remoteAccountBalance = web3j
-                                .ethGetBalance(remoteAccount, DefaultBlockParameterName.LATEST)
-                                .sendAsync()
-                                .get();
-                    } catch (InterruptedException | ExecutionException e) {
-                        e.printStackTrace();
-                    }
-                    acountBalance =   remoteAccountBalance.getBalance();
-                });
+        String remoteAccount = credentials.getAddress();
+        EthGetBalance remoteAccountBalance = null;
+        try {
+            remoteAccountBalance = web3j
+                    .ethGetBalance(remoteAccount, DefaultBlockParameterName.LATEST)
+                    .sendAsync()
+                    .get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+        acountBalance = remoteAccountBalance.getBalance();
+
         return acountBalance;
     }
 
-    private BigInteger loadRemoteBalance( ) {
+    private BigInteger loadRemoteBalance() {
 
-        String remoteAccount =  getRinkbySrcAccount();
-        BigInteger remoteAccountBalanceEther =  BigInteger.ZERO;
+        String remoteAccount = getRinkbySrcAccount();
+        BigInteger remoteAccountBalanceEther = BigInteger.ZERO;
 
         try {
             EthGetBalance remoteAccountBalance = web3j
@@ -108,51 +103,47 @@ public class WalletService {
     }
 
     public Observable<String> createWallet(String menomic) {
-        Observable<String>  callBack = null;
+        Observable<String> callBack = null;
 
         try {
-                ECKeyPair ecKeyPair = Keys.createEcKeyPair();
+            ECKeyPair ecKeyPair = Keys.createEcKeyPair();
 
-                 callBack = Observable.unsafeCreate(subscriber -> {
+            callBack = Observable.unsafeCreate(subscriber -> {
 
-                    String fileAsJson= null;
-                    try {
-                        fileAsJson = WalletUtils.generateWalletFile(menomic, ecKeyPair,  new File(propertiesConfig.getBase()), true);
-                         dbManager.saveWalletLocation(menomic, fileAsJson );
-                    } catch (CipherException | IOException e) {
+                String fileAsJson = null;
+                try {
+                    fileAsJson = WalletUtils.generateWalletFile(menomic, ecKeyPair, new File(propertiesConfig.getBase()), true);
+                    dbManager.saveWalletLocation(menomic, fileAsJson);
+                } catch (CipherException | IOException e) {
 
-                    }
-                    subscriber.onNext(fileAsJson);
-                  //  subscriber.onCompleted();
+                }
+                subscriber.onNext(fileAsJson);
+                //  subscriber.onCompleted();
 
-                });
+            });
 
 
-            } catch (  InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException e) {
-                //
-            }
+        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException e) {
+            //
+        }
         return callBack;
     }
 
 
+    public Credentials loadCredentials(String menomic) {
 
-    public Observable<Credentials> loadCredentials(String menomic ) {
+        Credentials credentials = dbManager.getUserCredentials(menomic);
 
-        Observable<Credentials> callBack = Observable.just( dbManager.getUserCredentials(menomic));
-
-        return callBack;
+        return credentials;
     }
 
 
+    public Observable<List<String>> loadMenomics() {
 
-
-    public Observable<List<String>> loadMenomics( ) {
-
-        Observable<List<String>> callBack = Observable.just( dbManager.findAllMenomics( ));
+        Observable<List<String>> callBack = Observable.just(dbManager.findAllMenomics());
 
         return callBack;
     }
-
 
 
     public Observable<String> sendTransaction(RawTransaction transaction, TransactionDto dto) {
@@ -165,14 +156,14 @@ public class WalletService {
         try {
             EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).sendAsync().get();
             if (ethSendTransaction.hasError()) {
-                callBack = Observable.just( ethSendTransaction.getError().getMessage());
+                callBack = Observable.just(ethSendTransaction.getError().getMessage());
                 logger.info("oops: {}", ethSendTransaction.getError().getMessage());
             } else if (ethSendTransaction.getResult() != null || ethSendTransaction.getTransactionHash() != null) {
-                String transactionhash =   ethSendTransaction.getTransactionHash();
+                String transactionhash = ethSendTransaction.getTransactionHash();
 
-                callBack = Observable.just( transactionhash);
+                callBack = Observable.just(transactionhash);
 
-                logger.info("TransactionHash: {}",  transactionhash);
+                logger.info("TransactionHash: {}", transactionhash);
 
                 // https://rinkeby.etherscan.io/txsPending
 
@@ -184,26 +175,22 @@ public class WalletService {
     }
 
 
+    public Observable<TransactionDto> loadTransactionBaseData(String menomic) {
+        TransactionDto dto = new TransactionDto();
+        dto.setRemoteAccount(getRinkbySrcAccount());
+        Credentials credentials = dbManager.getUserCredentials(menomic);
+        dto.setLocalCredentials(credentials);
+        try {
 
-    public Observable<TransactionDto> loadTransactionBaseData(String menomic ) {
-         TransactionDto dto = new TransactionDto();
-         dto.setRemoteAccount(getRinkbySrcAccount());
-         loadCredentials(menomic).subscribe(c -> {
-         dto.setLocalCredentials(c);
+            EthGetTransactionCount ethGetTransactionCount =
+                    web3j.ethGetTransactionCount(dto.getLocalAccount(), DefaultBlockParameterName.LATEST).sendAsync().get();
+            dto.setNonce(ethGetTransactionCount.getTransactionCount());
+            ;
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
 
-            try {
-
-                EthGetTransactionCount ethGetTransactionCount =
-                        web3j.ethGetTransactionCount(dto.getLocalAccount(), DefaultBlockParameterName.LATEST).sendAsync().get();
-                dto.setNonce(ethGetTransactionCount.getTransactionCount());
-                ;
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-
-        });
-
-        Observable<TransactionDto> callBack = Observable.just( dto);
+        Observable<TransactionDto> callBack = Observable.just(dto);
 
         return callBack;
     }
@@ -211,25 +198,9 @@ public class WalletService {
 
     public String getRinkbySrcAccount() {
 
-     return   env.getProperty("rinkby.source.address");
+        return env.getProperty("rinkby.source.address");
 
     }
 
-
-    /**
-     * test method only
-     */
-    public void loadCredentialsCheckAndStop(String menomic ) {
-
-        Observable callBack = Observable.unsafeCreate(subscriber -> {
-
-            Credentials credentials  = dbManager.getUserCredentials(menomic);
-            subscriber.onNext(credentials);
-            subscriber.onCompleted();
-        });
-
-        callBack.subscribe(credentialsHook);
-
-    }
 
 }

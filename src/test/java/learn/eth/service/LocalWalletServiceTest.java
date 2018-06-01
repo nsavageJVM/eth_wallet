@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.shell.jline.InteractiveShellApplicationRunner;
 import org.springframework.shell.jline.ScriptShellApplicationRunner;
 import org.springframework.test.context.TestPropertySource;
@@ -68,34 +67,32 @@ public class LocalWalletServiceTest {
     public void setUp() {
         web3j = Web3j.build(new HttpService("http://127.0.0.1:8545"));
 
-        walletService.loadCredentials(menomic).subscribe(c -> {
-            localCredentials = c;
-            localAccount = c.getAddress();
+        localCredentials = walletService.loadCredentials(menomic);
+        localAccount = localCredentials.getAddress();
 
-            try {
+        try {
 
-                remoteAccount = walletService.getRinkbySrcAccount();
+            remoteAccount = walletService.getRinkbySrcAccount();
 
-                EthGetBalance remoteAccountBalance = web3j
-                        .ethGetBalance(remoteAccount, DefaultBlockParameterName.LATEST)
-                        .sendAsync()
-                        .get();
-                remoteAccountBalanceEther = remoteAccountBalance.getBalance();
-                logger.info("rinkkby remote wallet getBalance: {}", remoteAccountBalanceEther);
+            EthGetBalance remoteAccountBalance = web3j
+                    .ethGetBalance(remoteAccount, DefaultBlockParameterName.LATEST)
+                    .sendAsync()
+                    .get();
+            remoteAccountBalanceEther = remoteAccountBalance.getBalance();
+            logger.info("rinkkby remote wallet getBalance: {}", remoteAccountBalanceEther);
 
 
-                EthGetBalance localAccountBalance = web3j
-                        .ethGetBalance(localAccount, DefaultBlockParameterName.LATEST)
-                        .sendAsync()
-                        .get();
-                localAccountBalanceEther = localAccountBalance.getBalance();
-                logger.info("rinkkby local wallet getBalance: {}", localAccountBalanceEther);
+            EthGetBalance localAccountBalance = web3j
+                    .ethGetBalance(localAccount, DefaultBlockParameterName.LATEST)
+                    .sendAsync()
+                    .get();
+            localAccountBalanceEther = localAccountBalance.getBalance();
+            logger.info("rinkkby local wallet getBalance: {}", localAccountBalanceEther);
 
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
 
-        });
 
     }
 
@@ -114,9 +111,9 @@ public class LocalWalletServiceTest {
 
         logger.info("rinkkby local wallet available amount: {}", localAccountBalanceEther.toString());
 
-        BigInteger funds =  localAccountBalanceEther.subtract(amountWei) ;
+        BigInteger funds = localAccountBalanceEther.subtract(amountWei);
         logger.info("rinkkby local wallet available funds after transfer: {}", funds);
-        assertTrue( funds.compareTo(BigInteger.ZERO) > 0 );
+        assertTrue(funds.compareTo(BigInteger.ZERO) > 0);
 
     }
 
@@ -139,13 +136,13 @@ public class LocalWalletServiceTest {
         String hexValue = Numeric.toHexString(signedMessage);
 
         // send the transaction with the local rinkby client
-        EthSendTransaction  ethSendTransaction = web3j.ethSendRawTransaction(hexValue).sendAsync().get();
+        EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).sendAsync().get();
 
         if (ethSendTransaction.hasError()) {
             logger.info("oops: {}", ethSendTransaction.getError().getMessage());
         } else if (ethSendTransaction.getResult() != null || ethSendTransaction.getTransactionHash() != null) {
-            String transactionhash =   ethSendTransaction.getTransactionHash();
-            logger.info("TransactionHash: {}",  transactionhash);
+            String transactionhash = ethSendTransaction.getTransactionHash();
+            logger.info("TransactionHash: {}", transactionhash);
             assertNotNull(transactionhash);
             // https://rinkeby.etherscan.io/txsPending
 
@@ -162,7 +159,7 @@ public class LocalWalletServiceTest {
         EthGasPrice ethGasPrice = web3j.ethGasPrice().send();
         BigInteger gas_price = ethGasPrice.getGasPrice();
         logger.info("rinkkby gas_price: {}", gas_price);
-        logger.info("rinkkby gas_price will not be enogh for remote chain need check metamask" );
+        logger.info("rinkkby gas_price will not be enogh for remote chain need check metamask");
 
 
         EthBlockNumber etBlockNumber = web3j.ethBlockNumber().send();

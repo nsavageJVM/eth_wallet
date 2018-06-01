@@ -6,6 +6,8 @@ import org.jline.utils.AttributedStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ExitCodeExceptionMapper;
+import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -29,63 +31,42 @@ public class BeansConfig {
     @Autowired
     private TransactionConverter transactionConverter;
 
-    @Bean(name="transaction")
-    public ConversionService getConversionService()  {
+    @Bean(name = "transaction")
+    public ConversionService getConversionService() {
         ConversionServiceFactoryBean bean = new ConversionServiceFactoryBean();
-        bean.setConverters( getConverters() );
+        bean.setConverters(getConverters());
         bean.afterPropertiesSet();
         ConversionService object = bean.getObject();
         return object;
     }
 
-    private Set<Converter<?, ?>> getConverters()  {
+    private Set<Converter<?, ?>> getConverters() {
         Set<Converter<?, ?>> converters = new HashSet<Converter<?, ?>>();
-        converters.add( transactionConverter );
+        converters.add(transactionConverter);
         return converters;
     }
 
-    /**
-     * A shutdown hook from a callback
-     * @return
-     */
-    @Bean(name="shutDownHook")
-    public Subscriber<String> getShutDownHook()  {
-        return  new Subscriber<String>() {
-            @Override
-            public void onCompleted() {
-                System.exit(0);
-            }
 
-            @Override
-            public void onError(Throwable throwable) { }
 
-            @Override
-            public void onNext(String s) {
-                logger.info(s);
 
+
+
+    @Bean
+    public ExitCodeExceptionMapper getExitCodeExceptionMapper() {
+
+        ExitCodeExceptionMapper mapper = new ExitCodeExceptionMapper() {
+            @Override
+            public int getExitCode(Throwable exception) {
+                System.out.println("oops" +exception.getLocalizedMessage() );
+                return 0;
             }
         };
 
+        return mapper;
     }
 
 
-    @Bean(name="credentialsHook")
-    public Subscriber<Credentials> getCredentialsHook()  {
-        return  new Subscriber<Credentials>() {
-            @Override
-            public void onCompleted() {
-                System.exit(0);
-            }
 
-            @Override
-            public void onError(Throwable throwable) { }
 
-            @Override
-            public void onNext(Credentials s) {
-                logger.info("local wallet address: {}", s.getAddress());
 
-            }
-        };
-
-    }
 }

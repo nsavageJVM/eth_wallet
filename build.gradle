@@ -35,6 +35,10 @@ dependencies {
 }
 
 
+bootJar {
+	exclude '**/dangerous/**'
+}
+
 
 task  deployArtifact (type: Copy, dependsOn: bootJar) {
 

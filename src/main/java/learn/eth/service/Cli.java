@@ -2,12 +2,14 @@ package learn.eth.service;
 
 
 import learn.eth.config.PropertiesConfig;
+import learn.eth.service.shell.ConsoleFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ansi.AnsiOutput;
 import org.springframework.shell.Availability;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.table.*;
+import rx.Subscription;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -23,7 +25,7 @@ public class Cli {
 
 
     @Autowired
-    private  WalletService walletService;
+    private WalletService walletService;
 
     @Autowired
     private PropertiesConfig propertiesConfig;
@@ -31,92 +33,99 @@ public class Cli {
     @Autowired
     private Security auth;
 
+    @Autowired
+    ConsoleFormatter out;
+
 
     Availability logInAvailability() {
 
-        return !auth.isLoggedIn() ? Availability.available() :Availability.unavailable("already logged in");
+        return !auth.isLoggedIn() ? Availability.available() : Availability.unavailable("already logged in");
     }
 
     @ShellMethod("Log in with password")
-    public String logIn( String password) {
+    public String logIn(String password) {
 
-       if(auth.login(password)) {
-           return  AnsiOutput.toString(GREEN, Security.LOG_IN_SUCCESS, DEFAULT);
-       } else {
-           return  AnsiOutput.toString(BRIGHT_RED, Security.LOG_IN_FAIL, DEFAULT);
-       }
-
+        if (auth.login(password)) {
+            return out.formatSuccess(Security.LOG_IN_SUCCESS);
+        } else {
+            return out.formatFail(Security.LOG_IN_FAIL);
+        }
     }
 
 
-
     @ShellMethod("Create a Wallet requires a suitable menomic")
-    public String createWallet( String menomic) {
+    public String createWallet(String menomic) {
 
-        if(!auth.isLoggedIn()) {
-            return  AnsiOutput.toString(BRIGHT_RED, Security.NOT_AUTHORISED, DEFAULT);
+        if (!auth.isLoggedIn()) {
+            return out.formatFail(Security.NOT_AUTHORISED);
         }
 
-        if(menomic.length() <  40) {
-            return  AnsiOutput.toString(RED, "needs a few more words", DEFAULT);
+        if (menomic.length() < 40) {
+            return out.formatFail( "needs a few more words");
         }
 
         walletService.createWallet(menomic);
 
-        return  AnsiOutput.toString(GREEN, menomic, DEFAULT);
+        return out.formatSuccess( menomic);
     }
 
 
     @ShellMethod("Show Local Wallet Balance")
-    public String getLocalWalletBalance( String menomic) {
-
-
-        if(!auth.isLoggedIn()) {
-            return  AnsiOutput.toString(BRIGHT_RED, Security.NOT_AUTHORISED, DEFAULT);
+    public void getLocalWalletBalance(String menomic) {
+        if (!auth.isLoggedIn()) {
+            out.consoleOutError(Security.NOT_AUTHORISED);
         }
-        AtomicReference<String> result = new AtomicReference<>("");
 
-         walletService.getBalance(menomic).subscribe(balance -> {
-             result.set(AnsiOutput.toString(RED, balance.toString(), DEFAULT));
-         },
-         e -> {
-             System.out.println(e.getLocalizedMessage());
-         });
+        Subscription disposable =   walletService.getBalance(menomic).subscribe(
+                balance -> {
+                     out.consoleOutInfo(String.format("Local account balance: %s" ,balance.toString()));
+                },
+                e -> {
+                    out.consoleOutError(e.getLocalizedMessage());
+                },
+                ()-> {
+                    out.consoleOutSuccess( "request completed");
+                });
+        if(disposable.isUnsubscribed()) {
 
+            disposable.unsubscribe();
+        }
 
-        return  result.get();
     }
-
 
 
     @ShellMethod("Show Remote Wallet Balance")
-    public String getRemoteWalletBalance( )  {
+    public void getRemoteWalletBalance() {
 
-        if(!auth.isLoggedIn()) {
-            return  AnsiOutput.toString(BRIGHT_RED, Security.NOT_AUTHORISED, DEFAULT);
+        if (!auth.isLoggedIn()) {
+             out.consoleOutError(Security.NOT_AUTHORISED);
         }
-        AtomicReference<String> result = new AtomicReference<>("");
 
-        walletService.getRemoteBalance() .subscribe(balance -> {
-                    result.set(AnsiOutput.toString(RED, balance.toString(), DEFAULT));
+        Subscription disposable =  walletService.getRemoteBalance().subscribe(balance -> {
+                    out.consoleOutInfo(String.format("Remote account balance: %s" ,balance.toString()));
                 },
                 e -> {
-                    System.out.println(e.getLocalizedMessage());
+                    out.consoleOutError(e.getLocalizedMessage());
+                },
+                ()-> {
+                    out.consoleOutSuccess( "request completed");
                 });
 
+        if(disposable.isUnsubscribed()) {
 
-        return  result.get();
+            disposable.unsubscribe();
+        }
+
     }
 
 
-
     @ShellMethod("Shows avaiable Menomics")
-    public Table showMenomics( ) {
+    public Table showMenomics() {
 
-        if(!auth.isLoggedIn()) {
+        if (!auth.isLoggedIn()) {
             String[][] data = new String[1][1];
             TableModel model = new ArrayTableModel(data);
-            TableBuilder tableBuilder = new TableBuilder(model) ;
+            TableBuilder tableBuilder = new TableBuilder(model);
             data[0][0] = Security.NOT_AUTHORISED;
             return tableBuilder.addFullBorder(BorderStyle.fancy_light_double_dash).build();
         }
@@ -126,27 +135,27 @@ public class Cli {
 
         String[][] data = new String[2][menomics.size()];
         TableModel model = new ArrayTableModel(data);
-        TableBuilder tableBuilder = new TableBuilder(model) ;
+        TableBuilder tableBuilder = new TableBuilder(model);
 
-        for(int i = 0; i < menomics.size(); i++) {
-                data[i][0] = i+1+"";
-                data[i][1] = menomics.get(i);
+        for (int i = 0; i < menomics.size(); i++) {
+            data[i][0] = i + 1 + "";
+            data[i][1] = menomics.get(i);
         }
 
         return tableBuilder.addFullBorder(BorderStyle.fancy_light_double_dash).build();
     }
 
 
-
     @ShellMethod("Show deBug")
-    public String deBug(  ) {
+    public String deBug() {
         AtomicReference<String> result = new AtomicReference<>("");
         walletService.loadMenomics().subscribe(
                 s -> {
-                    result.set(AnsiOutput.toString(RED, String.join(",",  s), DEFAULT)); }
-                );
+                    result.set(AnsiOutput.toString(RED, String.join(",", s), DEFAULT));
+                }
+        );
 
-        return  result.get();
+        return result.get();
     }
 
 
