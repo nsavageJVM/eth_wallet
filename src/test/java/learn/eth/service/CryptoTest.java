@@ -60,6 +60,8 @@ public class CryptoTest extends CryptoBase {
     @Test
     public void cipherDemoTest() {
 
+        java.security.Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+
         KeyPair keyPairA = generateECKeys();
         SecretKey secretKeyA = generateSharedSecret(keyPairA.getPrivate(), keyPairA.getPublic());
 

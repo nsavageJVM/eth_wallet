@@ -26,18 +26,17 @@ repositories {
 
 dependencies {
 	implementation('org.springframework.boot:spring-boot-starter-web')
+	// web3
 	implementation ('org.web3j:core:3.4.0')
 	implementation ('io.projectreactor:reactor-core:3.1.7.RELEASE')
-	implementation ( 'org.springframework.shell:spring-shell-starter:2.0.0.RELEASE')
+	// persitance
 	implementation 'org.xerial:sqlite-jdbc:3.21.0.1'
 	implementation'commons-dbutils:commons-dbutils:1.7'
+
+	// test
 	testImplementation('org.springframework.boot:spring-boot-starter-test')
 }
 
-
-bootJar {
-	exclude '**/dangerous/**'
-}
 
 
 task  deployArtifact (type: Copy, dependsOn: bootJar) {
