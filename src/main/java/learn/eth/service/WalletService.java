@@ -2,15 +2,14 @@ package learn.eth.service;
 
 import learn.eth.config.PropertiesConfig;
 import learn.eth.db.DbManager;
+import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
-import org.web3j.crypto.CipherException;
-import org.web3j.crypto.ECKeyPair;
-import org.web3j.crypto.Keys;
-import org.web3j.crypto.WalletUtils;
+import org.web3j.crypto.*;
 import rx.Observable;
 
 import java.io.File;
@@ -24,8 +23,6 @@ public class WalletService {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
-    private Environment env;
 
     @Autowired
     private DbManager dbManager;
@@ -36,33 +33,34 @@ public class WalletService {
 
 
 
-    public Observable<String> createWallet(String menomic) {
-        Observable<String> callBack = null;
+    public  String createWallet(String menomic) {
+        String fileAsJson = null;
 
         try {
             ECKeyPair ecKeyPair = Keys.createEcKeyPair();
 
-            callBack = Observable.unsafeCreate(subscriber -> {
 
-                String fileAsJson = null;
                 try {
-                    fileAsJson = WalletUtils.generateWalletFile(menomic, ecKeyPair, new File(propertiesConfig.getBase()), true);
+                    fileAsJson = WalletUtils.generateWalletFile(menomic, ecKeyPair,
+                                    new File(propertiesConfig.getTestbase()), true);
                     dbManager.saveWalletLocation(menomic, fileAsJson);
                 } catch (CipherException | IOException e) {
 
                 }
-                subscriber.onNext(fileAsJson);
-                //  subscriber.onCompleted();
-
-            });
 
 
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException e) {
             //
         }
-        return callBack;
+        return fileAsJson;
     }
 
 
+    public Credentials loadCredentials(String menomic) {
+
+        Credentials credentials = dbManager.getUserCredentials(menomic);
+
+        return credentials;
+    }
 
 }

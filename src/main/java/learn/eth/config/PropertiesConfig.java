@@ -12,6 +12,8 @@ public class PropertiesConfig {
 
     private String template;
 
+    private String testbase;
+
     public String getBase() {
         return base;
     }
@@ -20,11 +22,13 @@ public class PropertiesConfig {
         this.base = base;
     }
 
-    public String getTemplate() { return template;
-    }
+    public String getTemplate() { return template; }
 
-    public void setTemplate(String template) { this.template = template;
-    }
+    public void setTemplate(String template) { this.template = template; }
+
+    public String getTestbase() { return testbase; }
+
+    public void setTestbase(String testbase) { this.testbase = testbase; }
 
 
 
