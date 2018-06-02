@@ -1,13 +1,11 @@
-package learn.eth.service.shell;
+package learn.eth.service.transaction;
 
-
-import learn.eth.service.transaction.TransactionDto;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 import org.web3j.crypto.RawTransaction;
 
 @Component
-public class TransactionConverter implements Converter<TransactionDto, RawTransaction> {
+public class TransactionConverter  implements Converter<TransactionDto, RawTransaction> {
 
 
     @Override
@@ -23,6 +21,4 @@ public class TransactionConverter implements Converter<TransactionDto, RawTransa
 
         return rawTransaction;
     }
-
-
 }

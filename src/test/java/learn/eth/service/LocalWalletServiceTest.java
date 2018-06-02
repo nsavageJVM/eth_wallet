@@ -9,8 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.shell.jline.InteractiveShellApplicationRunner;
-import org.springframework.shell.jline.ScriptShellApplicationRunner;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.web3j.crypto.Credentials;
@@ -33,15 +31,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = EntryPoint.class, properties = {
-        InteractiveShellApplicationRunner.SPRING_SHELL_INTERACTIVE_ENABLED + "=false",
-        ScriptShellApplicationRunner.SPRING_SHELL_SCRIPT_ENABLED + "=false"
-})
+@SpringBootTest(classes = EntryPoint.class )
 @TestPropertySource(
         locations = "classpath:application-test.properties")
 public class LocalWalletServiceTest {
 
-    private final Logger logger = LoggerFactory.getLogger("Wallet Service Test");
+    private final Logger logger = LoggerFactory.getLogger(LocalWalletServiceTest.class);
 
     @Value("${walet.local.menomic}")
     String menomic;

@@ -17,7 +17,6 @@ import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.utils.Numeric;
 import rx.Observable;
-import rx.Subscriber;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
@@ -27,9 +26,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Service(value = "walletService")
 public class WalletService {
