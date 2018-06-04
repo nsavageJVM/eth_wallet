@@ -52,10 +52,6 @@ public class LocalWalletServiceTest {
 
     private BigDecimal amountEther = valueOf(0.0000123);
 
-    private BigInteger remoteAccountBalanceEther;
-
-    private BigInteger localAccountBalanceEther;
-
     private Credentials localCredentials;
 
     @Before
@@ -65,86 +61,25 @@ public class LocalWalletServiceTest {
         localCredentials = walletService.loadCredentials(menomic);
         localAccount = localCredentials.getAddress();
 
-        try {
-
-            remoteAccount = walletService.getRinkbySrcAccount();
-
-            EthGetBalance remoteAccountBalance = web3j
-                    .ethGetBalance(remoteAccount, DefaultBlockParameterName.LATEST)
-                    .sendAsync()
-                    .get();
-            remoteAccountBalanceEther = remoteAccountBalance.getBalance();
-            logger.info("rinkkby remote wallet getBalance: {}", remoteAccountBalanceEther);
-
-
-            EthGetBalance localAccountBalance = web3j
-                    .ethGetBalance(localAccount, DefaultBlockParameterName.LATEST)
-                    .sendAsync()
-                    .get();
-            localAccountBalanceEther = localAccountBalance.getBalance();
-            logger.info("rinkkby local wallet getBalance: {}", localAccountBalanceEther);
-
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
-
-
     }
 
+
+    //  ./gradlew test --tests *LocalWalletServiceTest.runCAccountTest
+    //  ./gradlew --rerun-tasks  test --tests *LocalWalletServiceTest.runCAccountTest   --info
 
     @Test
-    public void getLocalBalance() throws Exception {
+    public void runCAccountTest() throws IOException, ExecutionException, InterruptedException {
 
-        logger.info("rinkkby local balancew: {}", localAccountBalanceEther.toString());
-    }
+         walletService.createWallet("this is a test");
 
-    @Test
-    public void ensureFundsForRemoteTransfer() throws Exception {
-
-        BigInteger amountWei = Convert.toWei(amountEther.toString(), Convert.Unit.ETHER).toBigInteger();
-        logger.info("rinkkby transfer to wallet amount: {}", amountWei.toString());
-
-        logger.info("rinkkby local wallet available amount: {}", localAccountBalanceEther.toString());
-
-        BigInteger funds = localAccountBalanceEther.subtract(amountWei);
-        logger.info("rinkkby local wallet available funds after transfer: {}", funds);
-        assertTrue(funds.compareTo(BigInteger.ZERO) > 0);
+         localCredentials =  walletService.loadCredentials("this is a test");
+         logger.info("local Address: {}", localCredentials.getAddress());
+         remoteAccount = walletService.getRinkbySrcAccount();
+         logger.info("remoteAccount Address: {}", remoteAccount);
 
     }
 
 
-    @Test
-    public void transferFromLocalToRemote() throws ExecutionException, InterruptedException {
-
-        // set up transfer amount in wei
-        BigInteger amountWei = Convert.toWei(amountEther.toString(), Convert.Unit.ETHER).toBigInteger();
-        //  get the nonce
-        EthGetTransactionCount ethGetTransactionCount =
-                web3j.ethGetTransactionCount(localAccount, DefaultBlockParameterName.LATEST).sendAsync().get();
-        BigInteger nonce = ethGetTransactionCount.getTransactionCount();
-        // create a raw transaction
-        RawTransaction rawTransaction = RawTransaction.createEtherTransaction(
-                nonce, Convert.toWei("2", Convert.Unit.GWEI).toBigInteger(), BigInteger.valueOf(21000), remoteAccount, amountWei);
-
-        // sign the transaction with the local wallets credentials
-        byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, localCredentials);
-        String hexValue = Numeric.toHexString(signedMessage);
-
-        // send the transaction with the local rinkby client
-        EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).sendAsync().get();
-
-        if (ethSendTransaction.hasError()) {
-            logger.info("oops: {}", ethSendTransaction.getError().getMessage());
-        } else if (ethSendTransaction.getResult() != null || ethSendTransaction.getTransactionHash() != null) {
-            String transactionhash = ethSendTransaction.getTransactionHash();
-            logger.info("TransactionHash: {}", transactionhash);
-            assertNotNull(transactionhash);
-            // https://rinkeby.etherscan.io/txsPending
-
-        }
-
-
-    }
 
     @Test
     public void runChainDiagnostics() throws IOException, ExecutionException, InterruptedException {

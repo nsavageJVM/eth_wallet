@@ -99,31 +99,26 @@ public class WalletService {
         return remoteAccountBalanceEther;
     }
 
-    public Observable<String> createWallet(String menomic) {
-        Observable<String> callBack = null;
+    public void createWallet(String menomic) {
+
 
         try {
             ECKeyPair ecKeyPair = Keys.createEcKeyPair();
 
-            callBack = Observable.unsafeCreate(subscriber -> {
 
-                String fileAsJson = null;
-                try {
-                    fileAsJson = WalletUtils.generateWalletFile(menomic, ecKeyPair, new File(propertiesConfig.getBase()), true);
-                    dbManager.saveWalletLocation(menomic, fileAsJson);
-                } catch (CipherException | IOException e) {
+            String fileAsJson = null;
+            try {
+                fileAsJson = WalletUtils.generateWalletFile(menomic, ecKeyPair, new File(propertiesConfig.getBase()), true);
+                dbManager.saveWalletLocation(menomic, fileAsJson);
+            } catch (CipherException | IOException e) {
 
-                }
-                subscriber.onNext(fileAsJson);
-                //  subscriber.onCompleted();
-
-            });
+            }
 
 
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException e) {
             //
         }
-        return callBack;
+
     }
 
 
