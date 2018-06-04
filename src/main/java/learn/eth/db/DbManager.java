@@ -31,7 +31,6 @@ public class DbManager {
     private PropertiesConfig propertiesConfig;
 
     private Connection connection = null;
-    private static Boolean isInitial = false;
 
      private static String user_home = System.getProperty("user.home");
 
@@ -45,18 +44,13 @@ public class DbManager {
     }
 
 
-    @PostConstruct
-    void init() {
+    public void init(String dbName) {
 
         try {
-            connection = DriverManager.getConnection(String.format("jdbc:sqlite:%s/wally.db", user_home));
+            connection = DriverManager.getConnection(String.format("jdbc:sqlite:%s/%s.db", user_home, dbName));
             Statement statement = connection.createStatement();
             statement.setQueryTimeout(3);
-
-            if (isInitial) {
-                statement.executeUpdate("drop table if exists wally");
-                statement.executeUpdate("create table wally (menomic string,  file_path string)");
-            }
+            statement.executeUpdate("create table if not exists wally (menomic string,  file_path string)");
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -104,6 +98,10 @@ public class DbManager {
 
         return results;
     }
+
+
+
+
 
 
 }

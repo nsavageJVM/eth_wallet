@@ -1,6 +1,7 @@
 package learn.eth.service;
 
 import learn.eth.EntryPoint;
+import learn.eth.db.DbManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,11 +39,11 @@ public class LocalWalletServiceTest {
 
     private final Logger logger = LoggerFactory.getLogger(LocalWalletServiceTest.class);
 
-    @Value("${walet.local.menomic}")
-    String menomic;
-
     @Autowired
     WalletService walletService;
+
+    @Autowired
+    DbManager dbManager;
 
     private Web3j web3j;
 
@@ -56,10 +57,12 @@ public class LocalWalletServiceTest {
 
     @Before
     public void setUp() {
+        dbManager.init("wally_1");
         web3j = Web3j.build(new HttpService("http://127.0.0.1:8545"));
 
-        localCredentials = walletService.loadCredentials(menomic);
-        localAccount = localCredentials.getAddress();
+//        localCredentials = walletService.loadCredentials(menomic);
+//        localAccount = localCredentials.getAddress();
+
 
     }
 
