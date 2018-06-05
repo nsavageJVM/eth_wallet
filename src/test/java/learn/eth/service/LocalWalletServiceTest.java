@@ -54,14 +54,21 @@ public class LocalWalletServiceTest {
     private BigDecimal amountEther = valueOf(0.0000123);
 
     private Credentials localCredentials;
+    private BigInteger localAccountBalanceEther;
 
     @Before
-    public void setUp() {
+    public void setUp() throws ExecutionException, InterruptedException {
         dbManager.init("wally_1");
         web3j = Web3j.build(new HttpService("http://127.0.0.1:8545"));
 
-//        localCredentials = walletService.loadCredentials(menomic);
-//        localAccount = localCredentials.getAddress();
+        localCredentials = walletService.loadCredentials("this is a test");
+        localAccount = localCredentials.getAddress();
+
+        EthGetBalance localAccountBalance = web3j
+                .ethGetBalance(localAccount, DefaultBlockParameterName.LATEST)
+                .sendAsync()
+                .get();
+        localAccountBalanceEther = localAccountBalance.getBalance();
 
 
     }
@@ -73,9 +80,8 @@ public class LocalWalletServiceTest {
     @Test
     public void runCAccountTest() throws IOException, ExecutionException, InterruptedException {
 
-         walletService.createWallet("this is a test");
-
-         localCredentials =  walletService.loadCredentials("this is a test");
+         // walletService.createWallet("this is a test");
+         // localCredentials =  walletService.loadCredentials("this is a test");
          logger.info("local Address: {}", localCredentials.getAddress());
          remoteAccount = walletService.getRinkbySrcAccount();
          logger.info("remoteAccount Address: {}", remoteAccount);
@@ -104,6 +110,68 @@ public class LocalWalletServiceTest {
                 web3j.ethGetTransactionCount(localAccount, DefaultBlockParameterName.LATEST).sendAsync().get();
         BigInteger nonce = ethGetTransactionCount.getTransactionCount();
         logger.info("rinkkby local wallet transaction count or NONCE: {}", nonce);
+
+    }
+
+
+
+    @Test
+    public void checkLocalBalanceTest() throws ExecutionException, InterruptedException {
+
+        EthGetBalance localAccountBalance = web3j
+                .ethGetBalance(localAccount, DefaultBlockParameterName.LATEST)
+                .sendAsync()
+                .get();
+        BigInteger localAccountBalanceEther = localAccountBalance.getBalance();
+        logger.info("rinkkby local wallet getBalance: {}", localAccountBalanceEther);
+
+    }
+
+
+    @Test
+    public void ensureFundsForRemoteTransfer() throws Exception {
+
+        BigInteger amountWei = Convert.toWei(amountEther.toString(), Convert.Unit.ETHER).toBigInteger();
+        logger.info("rinkkby transfer to wallet amount: {}", amountWei.toString());
+
+        logger.info("rinkkby local wallet available amount: {}", localAccountBalanceEther.toString());
+
+        BigInteger funds = localAccountBalanceEther.subtract(amountWei);
+        logger.info("rinkkby local wallet available funds after transfer: {}", funds);
+        assertTrue(funds.compareTo(BigInteger.ZERO) > 0);
+
+    }
+
+    @Test
+    public void transferFromLocalToRemote() throws ExecutionException, InterruptedException {
+
+        // set up transfer amount in wei
+        BigInteger amountWei = Convert.toWei(amountEther.toString(), Convert.Unit.ETHER).toBigInteger();
+        //  get the nonce
+        EthGetTransactionCount ethGetTransactionCount =
+                web3j.ethGetTransactionCount(localAccount, DefaultBlockParameterName.LATEST).sendAsync().get();
+        BigInteger nonce = ethGetTransactionCount.getTransactionCount();
+        // create a raw transaction
+        RawTransaction rawTransaction = RawTransaction.createEtherTransaction(
+                nonce, Convert.toWei("2", Convert.Unit.GWEI).toBigInteger(), BigInteger.valueOf(21000), remoteAccount, amountWei);
+
+        // sign the transaction with the local wallets credentials
+        byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, localCredentials);
+        String hexValue = Numeric.toHexString(signedMessage);
+
+        // send the transaction with the local rinkby client
+        EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).sendAsync().get();
+
+        if (ethSendTransaction.hasError()) {
+            logger.info("oops: {}", ethSendTransaction.getError().getMessage());
+        } else if (ethSendTransaction.getResult() != null || ethSendTransaction.getTransactionHash() != null) {
+            String transactionhash = ethSendTransaction.getTransactionHash();
+            logger.info("TransactionHash: {}", transactionhash);
+            assertNotNull(transactionhash);
+            // https://rinkeby.etherscan.io/txsPending
+
+        }
+
 
     }
 
