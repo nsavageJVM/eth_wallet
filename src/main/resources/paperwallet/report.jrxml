@@ -1,0 +1,84 @@
+<?xml version = "1.0"?>
+<!DOCTYPE jasperReport PUBLIC
+		"//JasperReports//DTD Report Design//EN"
+		"http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
+
+<jasperReport xmlns = "http://jasperreports.sourceforge.net/jasperreports"
+			  xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation = "http://jasperreports.sourceforge.net/jasperreports
+   									http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+			  name="paper-wallet" pageWidth="595" pageHeight="900"
+			  columnWidth="555" leftMargin="20" rightMargin="20"
+			  topMargin="20" bottomMargin="20">
+	<parameter name = "title" class="java.lang.String"/>
+	<parameter name = "qraddress" class="java.awt.image.BufferedImage"/>
+	<parameter name = "qrpubkey" class="java.awt.image.BufferedImage"/>
+	<parameter name = "qrprikey" class="java.awt.image.BufferedImage"/>
+
+	<title>
+		<band height = "40">
+
+			<textField isBlankWhenNull = "true" bookmarkLevel = "1">
+				<reportElement x = "0" y = "0" width = "515" height = "30"/>
+
+				<textElement textAlignment = "Center">
+					<font size = "22"/>
+				</textElement>
+
+				<textFieldExpression class = "java.lang.String">
+					<![CDATA[$P{title}]]>
+				</textFieldExpression>
+
+			</textField>
+
+			<line>
+				<reportElement x = "0" y = "28" width = "515" height = "1"/>
+			</line>
+
+		</band>
+	</title>
+
+	<detail>
+		<band height="800">
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="1" width="120" height="20"  />
+				<textElement>
+					<font pdfEncoding="Cp1254"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Address"]]></textFieldExpression>
+			</textField>
+			<image onErrorType="Blank">
+				<reportElement x="130" y="1" width="256" height="256"/>
+				<imageExpression><![CDATA[$P{qraddress}]]></imageExpression>
+			</image>
+
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="260" width="120" height="20"  />
+				<textElement>
+					<font pdfEncoding="Cp1254"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Public Key"]]></textFieldExpression>
+			</textField>
+			<image onErrorType="Blank">
+				<reportElement x="130" y="260" width="256" height="256"/>
+				<imageExpression><![CDATA[$P{qrpubkey}]]></imageExpression>
+			</image>
+
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="520" width="120" height="20"  />
+				<textElement>
+					<font pdfEncoding="Cp1254"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Private Key"]]></textFieldExpression>
+			</textField>
+			<image onErrorType="Blank">
+				<reportElement x="130" y="520" width="256" height="256"/>
+				<imageExpression><![CDATA[$P{qrprikey}]]></imageExpression>
+			</image>
+
+
+		</band>
+
+	</detail>
+
+</jasperReport>

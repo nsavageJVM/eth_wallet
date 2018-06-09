@@ -2,6 +2,7 @@ package learn.eth.service;
 
 
 import learn.eth.config.PropertiesConfig;
+import learn.eth.service.qrcode.PaperWalletGenerator;
 import learn.eth.service.shell.ConsoleFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ansi.AnsiOutput;
@@ -9,10 +10,12 @@ import org.springframework.shell.Availability;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.table.*;
+import org.web3j.crypto.Credentials;
 import rx.Subscription;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.springframework.boot.ansi.AnsiColor.*;
@@ -35,6 +38,10 @@ public class Cli {
 
     @Autowired
     ConsoleFormatter out;
+
+
+    @Autowired
+    PaperWalletGenerator paperWalletGenerator;
 
 
     Availability logInAvailability() {
@@ -66,6 +73,30 @@ public class Cli {
         }
 
         walletService.createWallet(menomic);
+
+        return out.formatSuccess( menomic);
+    }
+
+
+    @ShellMethod("Create a Paper  Wallet requires an existing wallet and menomic")
+    public String createPaperWallet(String menomic) {
+
+        if (!auth.isLoggedIn()) {
+            return out.formatFail(Security.NOT_AUTHORISED);
+        }
+
+        Credentials credentials =   walletService.loadCredentials(menomic);
+
+        if (Objects.isNull(credentials)) {
+            return out.formatFail("wallet does not exist for suppled menomic");
+        }
+
+       Boolean result = paperWalletGenerator.runJasperPaperWalletFlow(credentials);
+        if(result) {
+            out.consoleOutSuccess( "Paper  Wallet  completed");
+        } else {
+            out.consoleOutError("oops something went wrong");
+        }
 
         return out.formatSuccess( menomic);
     }

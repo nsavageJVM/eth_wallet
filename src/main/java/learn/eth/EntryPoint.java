@@ -50,7 +50,7 @@ public class EntryPoint  {
 
 			System.out.println("delete log file result "+result);
 
-			
+
 
 		};
 	}
