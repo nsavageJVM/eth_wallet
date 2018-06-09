@@ -7,13 +7,11 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "wallet")
 public class PropertiesConfig {
 
-
     private String base;
-
+    private String db;
     private String template;
 
-    public String getBase() {
-        return base;
+    public String getBase() { return base;
     }
 
     public void setBase(String base) {
@@ -24,6 +22,12 @@ public class PropertiesConfig {
     }
 
     public void setTemplate(String template) { this.template = template;
+    }
+
+    public String getDb() { return db;
+    }
+
+    public void setDb(String db) { this.db = db;
     }
 
 

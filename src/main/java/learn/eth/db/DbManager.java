@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static java.lang.Class.forName;
 
@@ -31,7 +32,8 @@ public class DbManager {
     private PropertiesConfig propertiesConfig;
 
     private Connection connection = null;
-    private static Boolean isInitial = false;
+    private String session_db;
+
 
      private static String user_home = System.getProperty("user.home");
 
@@ -45,18 +47,14 @@ public class DbManager {
     }
 
 
-    @PostConstruct
-    void init() {
 
+    public void init(String dbName) {
+        this.session_db = dbName;
         try {
-            connection = DriverManager.getConnection(String.format("jdbc:sqlite:%s/wally.db", user_home));
-            Statement statement = connection.createStatement();
-            statement.setQueryTimeout(3);
 
-            if (isInitial) {
-                statement.executeUpdate("drop table if exists wally");
-                statement.executeUpdate("create table wally (menomic string,  file_path string)");
-            }
+            Statement statement = setConnection() .createStatement();
+            statement.setQueryTimeout(3);
+            statement.executeUpdate("create table if not exists wally (menomic string,  file_path string)");
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -67,7 +65,7 @@ public class DbManager {
 
         QueryRunner run = new QueryRunner();
         try {
-            run.update(connection, "insert into wally values (?,?)",  new Object[]{menomic, file_path});
+            run.update(setConnection() , "insert into wally values (?,?)",  new Object[]{menomic, file_path});
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -80,7 +78,7 @@ public class DbManager {
         ScalarHandler<String> scalarHandler = new ScalarHandler<>();
         String query ="SELECT file_path FROM wally where menomic = '" + menomic + "';";
         try {
-        String file_path = runner.query(connection, query, scalarHandler);
+        String file_path = runner.query(setConnection() , query, scalarHandler);
         credentials = WalletUtils.loadCredentials(menomic, String.format(propertiesConfig.getTemplate(), file_path ) );
 
         } catch (IOException | SQLException | CipherException e) {
@@ -96,13 +94,27 @@ public class DbManager {
         QueryRunner runner = new QueryRunner();
 
         try {
-            results = runner.query(connection,"SELECT menomic FROM wally", new ColumnListHandler<String>(1));
+            results = runner.query(setConnection() ,"SELECT menomic FROM wally", new ColumnListHandler<String>(1));
 
         } catch ( SQLException  e) {
             e.printStackTrace();
         }
 
         return results;
+    }
+
+
+    private Connection setConnection() {
+
+        if(Objects.isNull(connection)) {
+            try {
+                connection = DriverManager.getConnection(String.format("jdbc:sqlite:%s/%s.db", user_home, session_db));
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return connection;
     }
 
 

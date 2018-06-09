@@ -8,3 +8,6 @@ For Ethereum the [web3j](https://web3j.github.io/web3j/) library is used.
 This is a [spring-boot](https://projects.spring.io/spring-boot/) application.
 
 ### Under Construction
+
+
+java -jar -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005 artifacts/wallys.jar

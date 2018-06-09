@@ -46,6 +46,7 @@ public class Cli {
     public String logIn(String password) {
 
         if (auth.login(password)) {
+            walletService.createSession();
             return out.formatSuccess(Security.LOG_IN_SUCCESS);
         } else {
             return out.formatFail(Security.LOG_IN_FAIL);
@@ -60,7 +61,7 @@ public class Cli {
             return out.formatFail(Security.NOT_AUTHORISED);
         }
 
-        if (menomic.length() < 40) {
+        if (menomic.length() < 15) {
             return out.formatFail( "needs a few more words");
         }
 
@@ -133,7 +134,7 @@ public class Cli {
 
         walletService.loadMenomics().subscribe(s -> menomics.addAll(s));
 
-        String[][] data = new String[2][menomics.size()];
+        String[][] data = new String[menomics.size()][2];
         TableModel model = new ArrayTableModel(data);
         TableBuilder tableBuilder = new TableBuilder(model);
 

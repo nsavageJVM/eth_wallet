@@ -56,6 +56,11 @@ public class WalletService {
         web3j = Web3j.build(new HttpService("http://127.0.0.1:8545"));
     }
 
+    // spring shell only
+    public void createSession() {
+                dbManager.init(propertiesConfig.getDb());
+    }
+
 
     public Observable<BigInteger> getBalance(String menomic) {
         return Observable.fromCallable(() -> loadBalance(menomic));
@@ -102,13 +107,10 @@ public class WalletService {
         return remoteAccountBalanceEther;
     }
 
-    public Observable<String> createWallet(String menomic) {
-        Observable<String> callBack = null;
+    public void  createWallet(String menomic) {
 
         try {
             ECKeyPair ecKeyPair = Keys.createEcKeyPair();
-
-            callBack = Observable.unsafeCreate(subscriber -> {
 
                 String fileAsJson = null;
                 try {
@@ -117,16 +119,13 @@ public class WalletService {
                 } catch (CipherException | IOException e) {
 
                 }
-                subscriber.onNext(fileAsJson);
-                //  subscriber.onCompleted();
 
-            });
 
 
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException e) {
             //
         }
-        return callBack;
+
     }
 
 
