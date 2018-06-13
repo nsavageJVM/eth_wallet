@@ -21,8 +21,7 @@ public class EntryPoint  {
 
 	private static String user_home = System.getProperty("user.home");
 
-	@Value("${wallet.base}")
-	private String walletBase;
+
 
 	@Value("${wallet.db}")
 	private String db;
@@ -33,20 +32,13 @@ public class EntryPoint  {
 	public static void main(String[] args) {  run(EntryPoint.class, args); }
 
 
-	/* bypassed with spring shell **/
+	/* bypassed with spring shell on start up but processed at end **/
 
 	@Bean
 	CommandLineRunner runner(){
 		return args -> {
 
 			boolean result = Files.deleteIfExists(Paths.get("./spring-shell.log"));
-
-
-			if(!Files.exists(Paths.get(walletBase))) {
-				Files.createDirectories(Paths.get(walletBase));
-			}
-
-			dbManager.init(db);
 
 			System.out.println("delete log file result "+result);
 

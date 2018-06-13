@@ -23,6 +23,8 @@ import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -58,7 +60,16 @@ public class WalletService {
 
     // spring shell only
     public void createSession() {
-                dbManager.init(propertiesConfig.getDb());
+
+        if(!Files.exists(Paths.get(propertiesConfig.getBase()))) {
+            try {
+                Files.createDirectories(Paths.get(propertiesConfig.getBase()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        dbManager.init(propertiesConfig.getDb());
     }
 
 

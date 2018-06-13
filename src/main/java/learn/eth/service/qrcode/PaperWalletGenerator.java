@@ -8,14 +8,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.stereotype.Service;
 import org.web3j.crypto.Credentials;
 
-import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageOutputStream;
-import javax.imageio.stream.MemoryCacheImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,7 +36,7 @@ public class PaperWalletGenerator {
 
     String OUT_DIR = String.format("%s/paper_wallets", user_home );
     String OUT_FILE = String.format("%s/paper_wallets/test.pdf", user_home );
-    String TEMPLATES_IN_DIR = "paperwallet";
+    String TEMPLATES_IN_DIR = "classpath:paperwallet/report.jrxml";
 
     @Autowired
     BitMapGenerator qrCodeGenerator;
@@ -50,12 +50,11 @@ public class PaperWalletGenerator {
         BufferedImage qrCodePubKey = null;
         BufferedImage qrCodePriKey = null;
 
-        File template =null;
+        String template =null;
 
         JREmptyDataSource ds = new JREmptyDataSource();
         try {
-            logger.info(tempalate_home.getURL().getPath());
-            template =  getFiles(tempalate_home).get(0);
+            template =  loadClassPathData().toString();
             qrCodeAddress = qrCodeGenerator.createQRCode(creds.getAddress());
             qrCodePubKey = qrCodeGenerator.createQRCode(creds.getEcKeyPair().getPublicKey().toString(16));
             qrCodePriKey = qrCodeGenerator.createQRCode(creds.getEcKeyPair().getPrivateKey().toString(16) );
@@ -64,8 +63,7 @@ public class PaperWalletGenerator {
             params.put("qraddress" , qrCodeAddress );
             params.put("qrpubkey" , qrCodePubKey );
             params.put("qrprikey" , qrCodePriKey );
-
-            JasperReport jasperReport = JasperCompileManager.compileReport(template.getAbsolutePath());
+            JasperReport jasperReport = JasperCompileManager.compileReport(new ByteArrayInputStream( template.getBytes(Charset.defaultCharset())));
             JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, params , ds);
             JasperExportManager.exportReportToPdfFile(jasperPrint, OUT_FILE);
 
@@ -90,7 +88,7 @@ public class PaperWalletGenerator {
         }
     }
 
-    private List<File>  getFiles(Resource  res ) throws IOException {
+    private List<File> getFileSystemResources(Resource  res ) throws IOException {
         List<File> fileList = new ArrayList<>();
 
         //uses try-with-resources pattern ensures stream will be closed.
@@ -103,6 +101,25 @@ public class PaperWalletGenerator {
             });
         }
         return  fileList ;
+    }
+
+
+    private StringBuilder loadClassPathData( ) throws IOException {
+        ClassLoader cl = this.getClass().getClassLoader();
+        ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(cl);
+        Resource[] resources = resolver.getResources(TEMPLATES_IN_DIR);
+
+        StringBuilder result = new StringBuilder();
+        try (BufferedReader reader =
+                     new BufferedReader(new InputStreamReader(resources[0].getInputStream()))) {
+
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                result.append(line);
+            }
+        }
+        return result;
     }
 
 }
