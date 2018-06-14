@@ -64,7 +64,7 @@ public class LocalWalletServiceTest {
 
     @Test
     public void PaperWalletTest() {
-
+        System.out.println(localAccount);
         paperWalletGenerator.runJasperPaperWalletFlow(localCredentials);
 
 
